@@ -41,7 +41,7 @@ import com.funnyprank.app.data.db.AppSettingsEntity
 import com.funnyprank.app.floating.FloatingOverlayService
 import com.funnyprank.app.ui.MainViewModel
 import com.funnyprank.app.ui.components.GlassBackground
-import com.funnyprank.app.ui.components.GlassSurface
+import com.funnyprank.app.ui.theme.GlassSurface
 import com.funnyprank.app.ui.theme.AccentMid
 import com.funnyprank.app.ui.theme.TextMuted
 import com.funnyprank.app.ui.theme.TextPrimary
@@ -79,8 +79,6 @@ fun MainDashboard(vm: MainViewModel, settings: AppSettingsEntity) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        GlassBackground(Modifier.fillMaxSize())
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -185,7 +183,6 @@ private fun GlassBottomBar(
 @Composable
 private fun MoreScreen(vm: MainViewModel) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val currentRouteLabel by remember { mutableStateOf(vm.engine.currentRoute) }
 
     GlassBackground {
