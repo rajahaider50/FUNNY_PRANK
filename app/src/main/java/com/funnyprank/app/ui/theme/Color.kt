@@ -9,8 +9,8 @@ val MidNavy = Color(0xFF111A3A)
 val AccentTop = Color(0xFF6A2CFF)
 val AccentMid = Color(0xFF00C2FF)
 val AccentPink = Color(0xFFFF3D8E)
-val AccentPurple = Color(0xFF7C4DFF)
 val AccentGold = Color(0xFFFFC53D)
+val AccentPurple = Color(0xFF7C4DFF)
 
 // ---- Glass surfaces (translucent whites) ----
 val GlassWhite = Color(0x33FFFFFF)
