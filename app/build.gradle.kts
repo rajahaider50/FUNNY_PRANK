@@ -1,3 +1,5 @@
+import java.io.File
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -22,8 +24,8 @@ android {
         create("release") {
             val envFile = System.getenv("KEYSTORE_FILE")
             storeFile = if (envFile != null) {
-                if (java.io.File(envFile).isAbsolute) java.io.File(envFile)
-                else java.io.File(rootProject.rootDir, envFile)
+                if (File(envFile).isAbsolute) File(envFile)
+                else File(rootProject.rootDir, envFile)
             } else null
             storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
             keyAlias = System.getenv("KEY_ALIAS") ?: ""
