@@ -57,7 +57,7 @@ object SoundImporter {
         val app = context.applicationContext as FunnyPrankApp
         val connection = DocumentFile.fromTreeUri(context, treeUri) ?: return@withContext 0
 
-        fun walk(doc: DocumentFile, prefix: String) {
+        suspend fun walk(doc: DocumentFile, prefix: String) {
             doc.listFiles().forEach { child ->
                 val name = child.name ?: return@forEach
                 if (child.isDirectory) {
