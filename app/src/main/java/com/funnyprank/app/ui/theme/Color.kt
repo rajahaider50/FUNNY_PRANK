@@ -9,6 +9,7 @@ val MidNavy = Color(0xFF111A3A)
 val AccentTop = Color(0xFF6A2CFF)
 val AccentMid = Color(0xFF00C2FF)
 val AccentPink = Color(0xFFFF3D8E)
+val AccentPurple = Color(0xFF7C4DFF)
 val AccentGold = Color(0xFFFFC53D)
 
 // ---- Glass surfaces (translucent whites) ----
@@ -37,7 +38,6 @@ val GlowPink = Color(0xFFFF4081)
 val LaunchGradient = Brush.linearGradient(
     listOf(AccentMid, AccentPurple, AccentPink)
 )
-val AccentPurple = Color(0xFF7C4DFF)
 
 val GlassBackgroundBrush = Brush.verticalGradient(
     listOf(DeepNavy, MidNavy)
