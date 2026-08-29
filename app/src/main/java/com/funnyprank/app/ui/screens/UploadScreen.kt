@@ -34,7 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.funnyprank.app.data.db.SoundItem
 import com.funnyprank.app.ui.components.GlassBackground
-import com.funnyprank.app.ui.components.GlassSurface
+import com.funnyprank.app.ui.theme.GlassSurface
 import com.funnyprank.app.ui.theme.AccentMid
 import com.funnyprank.app.ui.theme.GlassWhite
 import com.funnyprank.app.ui.theme.TextPrimary
