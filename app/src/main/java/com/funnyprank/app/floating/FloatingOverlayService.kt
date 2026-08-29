@@ -44,7 +44,7 @@ class FloatingOverlayService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val engine by lazy { AudioEngine(applicationContext) }
 
-    private var bubble: View? = null
+    private var bubble: FrameLayout? = null
     private var panel: FrameLayout? = null
 
     private var lastX = 0
