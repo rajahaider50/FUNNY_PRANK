@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.funnyprank.app.data.db.SoundItem
 import com.funnyprank.app.data.db.AppSettingsEntity
 import com.funnyprank.app.ui.components.GlassBackground
-import com.funnyprank.app.ui.components.GlassSurface
+import com.funnyprank.app.ui.theme.GlassSurface
 import com.funnyprank.app.ui.theme.AccentMid
 import com.funnyprank.app.ui.theme.AccentPink
 import com.funnyprank.app.ui.theme.GlassWhite
@@ -123,7 +123,7 @@ fun AdjustmentScreen(
 }
 
 @Composable
-private fun ModeChip(
+private fun androidx.compose.foundation.layout.RowScope.ModeChip(
     value: String,
     label: String,
     icon: ImageVector,
