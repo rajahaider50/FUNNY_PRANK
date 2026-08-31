@@ -284,7 +284,7 @@ private fun PermissionCard(ui: PermissionCardUi, done: Boolean, enabled: Boolean
                     .background(
                         if (done)
                             Brush.linearGradient(listOf(Color(0xFF25EE94), Color(0xFF0FC878)))
-                        else Brush.solidColor(Color.White.copy(alpha = 0.06f))
+                        else androidx.compose.ui.graphics.SolidColor(Color.White.copy(alpha = 0.06f))
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -332,7 +332,7 @@ private fun Footer(allDone: Boolean, onContinue: () -> Unit) {
                 .background(
                     if (allDone)
                         Brush.linearGradient(listOf(Color(0xFF24ED91), Color(0xFF0FC979)))
-                    else Brush.solidColor(Color.White.copy(alpha = 0.055f))
+                    else androidx.compose.ui.graphics.SolidColor(Color.White.copy(alpha = 0.055f))
                 )
                 .border(1.dp, if (allDone) BrandGreen.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.07f), enabledShape)
                 .clickable(enabled = allDone, onClick = onContinue),
