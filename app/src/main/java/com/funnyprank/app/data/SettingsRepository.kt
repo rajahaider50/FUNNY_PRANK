@@ -24,6 +24,10 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_FLOAT, false)
         set(value) = prefs.edit().putBoolean(KEY_FLOAT, value).apply()
 
+    var onboardingCompleted: Boolean
+        get() = prefs.getBoolean(KEY_ONBOARDING, false)
+        set(value) = prefs.edit().putBoolean(KEY_ONBOARDING, value).apply()
+
     var overlayX: Int
         get() = prefs.getInt(KEY_OVERLAY_X, Int.MIN_VALUE)
         set(value) = prefs.edit().putInt(KEY_OVERLAY_X, value).apply()
@@ -45,6 +49,7 @@ class SettingsRepository(context: Context) {
         const val KEY_THEME = "dark_theme"
         const val KEY_PREVIEW = "audio_preview"
         const val KEY_FLOAT = "floating_control"
+        const val KEY_ONBOARDING = "onboarding_completed"
         const val KEY_OVERLAY_X = "overlay_x"
         const val KEY_OVERLAY_Y = "overlay_y"
     }

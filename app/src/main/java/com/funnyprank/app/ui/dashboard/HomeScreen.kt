@@ -5,18 +5,22 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.asState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +37,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,9 +47,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.funnyprank.app.service.FloatingOverlayService
@@ -70,12 +80,12 @@ fun HomeScreen(viewModel: DashboardViewModel, onOpenSettings: () -> Unit) {
         }
     }
 
-    fun enable() {
+    fun ensureOverlayPermission(onGranted: () -> Unit) {
         if (Settings.canDrawOverlays(context)) {
             viewModel.setFloatingControl(true)
             FloatingOverlayService.start(context)
             active = true
-            viewModel.toast("Launch activated")
+            onGranted()
         } else {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -85,11 +95,20 @@ fun HomeScreen(viewModel: DashboardViewModel, onOpenSettings: () -> Unit) {
         }
     }
 
+    fun enable() {
+        if (Settings.canDrawOverlays(context)) {
+            viewModel.setFloatingControl(true)
+            FloatingOverlayService.start(context)
+            active = true
+            viewModel.toast("Floating audio control enabled")
+        }
+    }
+
     fun disable() {
         viewModel.setFloatingControl(false)
         FloatingOverlayService.stop(context)
         active = false
-        viewModel.toast("Launch disabled")
+        viewModel.toast("Floating audio control disabled")
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -120,78 +139,53 @@ fun HomeScreen(viewModel: DashboardViewModel, onOpenSettings: () -> Unit) {
             }
         }
 
-        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            LaunchRing()
-        }
+        LaunchSection(active = active, enabled = Settings.canDrawOverlays(context), onEnable = { enable() })
 
-        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-            LaunchToggle(active = active, onToggle = { if (active) disable() else enable() })
-            Spacer(Modifier.height(9.dp))
-            Text(
-                text = if (active) "Floating audio control is active." else "Launch enables the floating audio control.",
-                color = TextGray, fontSize = 10.sp, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+        SlideToLaunch(
+            active = active,
+            onActivate = { enable() },
+            onDeactivate = { disable() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp)
+        )
+        Spacer(Modifier.height(9.dp))
+        Text(
+            text = if (active)
+                "Floating audio control is active — it stays above other apps."
+            else
+                "Slide the power button to enable the floating audio control.",
+            color = TextGray, fontSize = 10.sp, textAlign = TextAlign.Center,
+            lineHeight = 13.sp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        )
+        Spacer(Modifier.height(8.dp))
     }
 }
 
+/**
+ * Centered, responsive launch ring. Sized against the available content
+ * box so it never spills off small screens and stays horizontally centered.
+ */
 @Composable
-private fun LaunchToggle(active: Boolean, onToggle: () -> Unit) {
-    val fraction by animateFloatAsState(if (active) 1f else 0f, tween(450))
-    val knobSize = 56.dp
-
+private fun LaunchSection(active: Boolean, enabled: Boolean, onEnable: () -> Unit) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(68.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color.White.copy(alpha = 0.045f))
-            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(22.dp))
-            .padding(6.dp)
+            .weight(1f),
+        contentAlignment = Alignment.Center
     ) {
-        val travel = maxWidth - knobSize
-        Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    if (active) "ACTIVE — TAP TO DISABLE" else "TAP TO LAUNCH",
-                    color = if (active) TextGreenSoft else TextGray,
-                    fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp
-                )
-                if (active) {
-                    Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Rounded.Bolt, null, tint = BrandGreen, modifier = Modifier.size(14.dp))
-                }
-            }
-        }
-        Box(
-            modifier = Modifier
-                .offset(x = travel * fraction)
-                .size(knobSize)
-                .clip(RoundedCornerShape(18.dp))
-                .background(
-                    if (active)
-                        Brush.linearGradient(listOf(BrandGreen, Color(0xFF0EB070)))
-                    else androidx.compose.ui.graphics.SolidColor(Color(0xFF101317))
-                )
-                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(18.dp))
-                .clickable(onClick = onToggle),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Rounded.PowerSettingsNew,
-                null,
-                tint = if (active) Color(0xFF03140D) else Color.White,
-                modifier = Modifier.size(17.dp)
-            )
-        }
+        val size: Dp = minOf(maxWidth * 0.68f, maxHeight * 0.96f)
+        LaunchRing(active = active, enabled = enabled, size = size, onClick = onEnable)
     }
 }
 
 @Composable
-private fun LaunchRing() {
-    val ringSize = remember { 265.dp }
-    Box(modifier = Modifier.size(ringSize)) {
+private fun LaunchRing(active: Boolean, enabled: Boolean, size: Dp, onClick: () -> Unit) {
+    val sweepAngle by animateFloatAsState(if (active) 360f else 300f, tween(700))
+    Box(modifier = Modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.matchParentSize()) {
             val radius = size.minDimension / 2f
             drawCircle(
@@ -207,8 +201,9 @@ private fun LaunchRing() {
                 .fillMaxSize()
                 .padding(13.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF07090C))
-                .border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape),
+                .background(if (active) Color(0xFF08130D) else Color(0xFF07090C))
+                .border(1.dp, if (active) BrandGreen.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.08f), CircleShape)
+                .clickable(enabled = enabled) { onClick() },
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -220,13 +215,119 @@ private fun LaunchRing() {
                         .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(17.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Rounded.Bolt, null, tint = BrandGreen, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Bolt, null, tint = if (active) BrandGreen else BrandGreen, modifier = Modifier.size(20.dp))
                 }
                 Spacer(Modifier.height(12.dp))
-                Text("Launch", color = TextWhite, fontSize = 28.sp, fontWeight = FontWeight.Black)
+                Text(
+                    if (active) "Active" else "Launch",
+                    color = TextWhite, fontSize = 24.sp, fontWeight = FontWeight.Black
+                )
                 Spacer(Modifier.height(7.dp))
-                Text("READY TO START", color = TextGray, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.3.sp)
+                Text(
+                    if (active) "AUDIO CONTROL ACTIVE" else "READY TO START",
+                    color = if (active) TextGreenSoft else TextGray, fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold, letterSpacing = 1.3.sp,
+                    textAlign = TextAlign.Center
+                )
             }
+        }
+    }
+}
+
+/**
+ * Slide-to-launch control: press, hold and drag the power knob. Crossing
+ * ~72% of the track toggles the state; otherwise the knob springs back.
+ */
+@Composable
+private fun SlideToLaunch(
+    active: Boolean,
+    onActivate: () -> Unit,
+    onDeactivate: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
+
+    val fraction = remember { Animatable(if (active) 1f else 0f) }
+    val frac by fraction.asState()
+    var dragging by remember { mutableStateOf(false) }
+
+    LaunchedEffect(active) {
+        if (!dragging) fraction.animateTo(if (active) 1f else 0f, tween(350))
+    }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .height(68.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color.White.copy(alpha = 0.045f))
+            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(22.dp))
+            .padding(6.dp)
+    ) {
+        val knobSize = 54.dp
+        val trackDp = maxWidth - knobSize
+        val trackPx = with(density) { trackDp.toPx() }
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .pointerInput(active, trackPx) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { dragging = true },
+                        onDragEnd = {
+                            dragging = false
+                            val f = fraction.value
+                            when {
+                                !active && f >= 0.72f -> {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onActivate()
+                                }
+                                active && f <= 0.28f -> {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onDeactivate()
+                                }
+                                else -> fraction.animateTo(if (active) 1f else 0f, tween(220))
+                            }
+                        },
+                        onDragCancel = {
+                            dragging = false
+                            fraction.animateTo(if (active) 1f else 0f, tween(220))
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            val delta = dragAmount / trackPx
+                            val next = if (active) fraction.value - delta else fraction.value + delta
+                            fraction.snapTo(next.coerceIn(0f, 1f))
+                        }
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                if (active) "SLIDE TO DISABLE" else "SLIDE TO LAUNCH",
+                color = if (active) TextGreenSoft else TextGray,
+                fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .offset(x = trackDp * frac)
+                .size(knobSize)
+                .clip(RoundedCornerShape(18.dp))
+                .background(
+                    if (active)
+                        Brush.linearGradient(listOf(BrandGreen, Color(0xFF0EB070)))
+                    else Color(0xFF101317)
+                )
+                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(18.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Rounded.PowerSettingsNew,
+                null,
+                tint = if (active) Color(0xFF03140D) else Color.White,
+                modifier = Modifier.size(17.dp)
+            )
         }
     }
 }

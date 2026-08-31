@@ -38,6 +38,15 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextOverflow
 import com.funnyprank.app.ui.theme.BrandGreen
 import com.funnyprank.app.ui.theme.BrandRed
 import com.funnyprank.app.ui.theme.TextGray
@@ -104,7 +113,8 @@ fun AudioScreen(viewModel: DashboardViewModel) {
         } else {
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 128.dp)
             ) {
                 items(filtered, key = { it.id }) { item ->
                     val isPlaying = playingItem?.id == item.id && playback.isPlaying
@@ -114,14 +124,16 @@ fun AudioScreen(viewModel: DashboardViewModel) {
                         onClick = { viewModel.playPreview(item) }
                     )
                 }
-                item { Spacer(Modifier.height(86.dp)) }
             }
         }
         }
 
         NowPlayingBar(
+            viewModel = viewModel,
             item = playingItem,
             isPlaying = playback.isPlaying,
+            positionMs = playback.positionMs,
+            durationMs = playback.durationMs,
             onToggle = { viewModel.toggleCurrent() },
             onStop = { viewModel.stopPlayback() },
             modifier = Modifier.align(Alignment.BottomCenter)
@@ -181,41 +193,99 @@ private fun AudioRow(
 
 @Composable
 private fun NowPlayingBar(
+    viewModel: DashboardViewModel,
     item: com.funnyprank.app.data.model.AudioItem?,
     isPlaying: Boolean,
+    positionMs: Long,
+    durationMs: Long,
     onToggle: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Poll the real player position while playing so the progress bar stays live.
+    var tickMs by remember { mutableLongStateOf(positionMs) }
+    LaunchedEffect(isPlaying) {
+        while (isPlaying) {
+            tickMs = viewModel.currentPositionMs()
+            kotlinx.coroutines.delay(250)
+        }
+        tickMs = positionMs
+    }
+
     Box(modifier = modifier.fillMaxWidth()) {
         if (item != null) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            val progress = if (durationMs > 0) (tickMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+            val finished = !isPlaying && durationMs > 0 && tickMs >= durationMs
+
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
-                    .background(Color(0xF00A0C0F), RoundedCornerShape(18.dp))
+                    .background(Color(0xF20A0C0F), RoundedCornerShape(18.dp))
                     .padding(9.dp)
             ) {
-                IconBox(if (isPlaying) Icons.Rounded.VolumeUp else Icons.Rounded.MusicNote,
-                    BrandGreen, size = 40)
-                Spacer(Modifier.width(9.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(item.display, color = TextWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Spacer(Modifier.height(3.dp))
-                    Text(if (isPlaying) "Playing" else "Paused", color = BrandGreen, fontSize = 9.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconBox(
+                        if (isPlaying) Icons.Rounded.VolumeUp else Icons.Rounded.MusicNote,
+                        BrandGreen, size = 40
+                    )
+                    Spacer(Modifier.width(9.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            item.display, color = TextWhite, fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            when {
+                                finished -> "Finished"
+                                isPlaying -> "Playing"
+                                else -> "Paused"
+                            },
+                            color = if (isPlaying) BrandGreen else TextGray, fontSize = 9.sp
+                        )
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        Modifier
+                            .size(34.dp)
+                            .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(11.dp))
+                            .clickable(onClick = onToggle),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            null, tint = BrandGreen, modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        Modifier
+                            .size(34.dp)
+                            .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(11.dp))
+                            .clickable(onClick = onStop),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.Stop, null, tint = Color(0xFFFF657B), modifier = Modifier.size(16.dp))
+                    }
                 }
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.height(9.dp))
                 Box(
-                    Modifier
-                        .size(34.dp)
-                        .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(11.dp))
-                        .clickable(onClick = onToggle),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.White.copy(alpha = 0.08f))
                 ) {
-                    Icon(
-                        if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        null, tint = BrandGreen, modifier = Modifier.size(18.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(
+                                Brush.horizontalGradient(listOf(BrandRed, BrandGreen))
+                            )
                     )
                 }
             }

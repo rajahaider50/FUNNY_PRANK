@@ -66,6 +66,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         com.funnyprank.app.service.PlaybackService.stop(getApplication<Application>())
     }
 
+    fun currentPositionMs(): Long = container.audioPlayer.currentPositionMs()
+
     fun rename(id: Long, newName: String) {
         viewModelScope.launch {
             val ok = repository.rename(id, newName)

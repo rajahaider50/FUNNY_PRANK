@@ -66,12 +66,27 @@ class AudioPlayer(private val context: Context) {
                 }
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
-                    if (playbackState == Player.STATE_ENDED) {
-                        _state.update { it.copy(isPlaying = false, positionMs = 0L) }
+                    when (playbackState) {
+                        Player.STATE_READY -> {
+                            val d = player.duration
+                            _state.update {
+                                it.copy(durationMs = if (d > 0) d else it.durationMs)
+                            }
+                        }
+                        Player.STATE_ENDED -> {
+                            _state.update { it.copy(isPlaying = false, positionMs = 0L) }
+                        }
                     }
                 }
             })
         }
+    }
+
+    /** Current playback position in ms (used to drive the progress bar). */
+    fun currentPositionMs(): Long = try {
+        exoPlayer?.currentPosition ?: 0L
+    } catch (_: Exception) {
+        0L
     }
 
     fun playItem(item: AudioItem) {
