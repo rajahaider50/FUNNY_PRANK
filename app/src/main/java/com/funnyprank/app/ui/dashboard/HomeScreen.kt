@@ -172,7 +172,7 @@ private fun LaunchToggle(active: Boolean, onToggle: () -> Unit) {
                 .background(
                     if (active)
                         Brush.linearGradient(listOf(BrandGreen, Color(0xFF0EB070)))
-                    else Color(0xFF101317)
+                    else Brush.solidColor(Color(0xFF101317))
                 )
                 .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(18.dp))
                 .clickable(onClick = onToggle),

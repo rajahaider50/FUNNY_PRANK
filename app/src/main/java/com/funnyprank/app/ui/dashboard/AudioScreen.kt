@@ -134,9 +134,8 @@ private fun rememberFiltered(
     viewModel: DashboardViewModel,
     audios: List<com.funnyprank.app.data.model.AudioItem>,
     query: String
-): List<com.funnyprank.app.data.model.AudioItem> {
+): List<com.funnyprank.app.data.model.AudioItem> =
     androidx.compose.runtime.remember(audios, query) { viewModel.filteredAudios() }
-}
 
 @Composable
 private fun AudioRow(

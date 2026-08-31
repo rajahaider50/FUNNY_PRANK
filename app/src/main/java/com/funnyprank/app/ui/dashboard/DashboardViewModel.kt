@@ -105,11 +105,3 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     enum class DashboardTab { HOME, AUDIO, UPLOAD, EDIT, SETTINGS }
 }
-
-fun DashboardTab.label(): String = when (this) {
-    DashboardViewModel.DashboardTab.HOME -> "Home"
-    DashboardViewModel.DashboardTab.AUDIO -> "Audio"
-    DashboardViewModel.DashboardTab.UPLOAD -> "Upload"
-    DashboardViewModel.DashboardTab.EDIT -> "Edit"
-    DashboardViewModel.DashboardTab.SETTINGS -> "Settings"
-}

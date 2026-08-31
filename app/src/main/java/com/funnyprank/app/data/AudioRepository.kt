@@ -51,7 +51,7 @@ class AudioRepository(
 
     suspend fun all(): List<AudioItem> = withContext(Dispatchers.IO) { dao.getAll().map { it.toModel() } }
 
-    private fun File.audioDir(): File =
+    private fun audioDir(): File =
         File(context.filesDir, "audio").apply { mkdirs() }
 
     // ---------------------------------------------------------------
