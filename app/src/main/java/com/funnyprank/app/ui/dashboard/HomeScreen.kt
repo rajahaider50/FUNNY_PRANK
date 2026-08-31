@@ -166,7 +166,7 @@ private fun LaunchToggle(active: Boolean, onToggle: () -> Unit) {
         }
         Box(
             modifier = Modifier
-                .offset(x = fraction * travel)
+                .offset(x = travel * fraction)
                 .size(knobSize)
                 .clip(RoundedCornerShape(18.dp))
                 .background(
