@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.asState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -41,12 +40,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -63,6 +64,7 @@ import com.funnyprank.app.ui.theme.BrandRed
 import com.funnyprank.app.ui.theme.TextGray
 import com.funnyprank.app.ui.theme.TextGreenSoft
 import com.funnyprank.app.ui.theme.TextWhite
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(viewModel: DashboardViewModel, onOpenSettings: () -> Unit) {
@@ -139,7 +141,12 @@ fun HomeScreen(viewModel: DashboardViewModel, onOpenSettings: () -> Unit) {
             }
         }
 
-        LaunchSection(active = active, enabled = Settings.canDrawOverlays(context), onEnable = { enable() })
+        LaunchSection(
+            active = active,
+            enabled = Settings.canDrawOverlays(context),
+            modifier = Modifier.weight(1f),
+            onEnable = { enable() }
+        )
 
         SlideToLaunch(
             active = active,
@@ -170,24 +177,21 @@ fun HomeScreen(viewModel: DashboardViewModel, onOpenSettings: () -> Unit) {
  * box so it never spills off small screens and stays horizontally centered.
  */
 @Composable
-private fun LaunchSection(active: Boolean, enabled: Boolean, onEnable: () -> Unit) {
+private fun LaunchSection(active: Boolean, enabled: Boolean, modifier: Modifier = Modifier, onEnable: () -> Unit) {
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .weight(1f),
+        modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
-        val size: Dp = minOf(maxWidth * 0.68f, maxHeight * 0.96f)
-        LaunchRing(active = active, enabled = enabled, size = size, onClick = onEnable)
+        val ringSize: Dp = minOf(maxWidth * 0.68f, maxHeight * 0.96f)
+        LaunchRing(active = active, enabled = enabled, size = ringSize, onClick = onEnable)
     }
 }
 
 @Composable
 private fun LaunchRing(active: Boolean, enabled: Boolean, size: Dp, onClick: () -> Unit) {
-    val sweepAngle by animateFloatAsState(if (active) 360f else 300f, tween(700))
     Box(modifier = Modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.matchParentSize()) {
-            val radius = size.minDimension / 2f
+            val radius = this.size.minDimension / 2f
             drawCircle(
                 brush = Brush.sweepGradient(
                     listOf(BrandRed, Color(0xFFFF9C39), Color(0xFFFFE600), BrandGreen, BrandRed)
@@ -247,13 +251,17 @@ private fun SlideToLaunch(
 ) {
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
 
     val fraction = remember { Animatable(if (active) 1f else 0f) }
-    val frac by fraction.asState()
+    var knob by remember { mutableStateOf(if (active) 1f else 0f) }
     var dragging by remember { mutableStateOf(false) }
 
     LaunchedEffect(active) {
-        if (!dragging) fraction.animateTo(if (active) 1f else 0f, tween(350))
+        if (!dragging) {
+            fraction.animateTo(if (active) 1f else 0f, tween(350))
+            knob = fraction.value
+        }
     }
 
     BoxWithConstraints(
@@ -286,17 +294,25 @@ private fun SlideToLaunch(
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     onDeactivate()
                                 }
-                                else -> fraction.animateTo(if (active) 1f else 0f, tween(220))
+                                else -> scope.launch {
+                                    fraction.animateTo(if (active) 1f else 0f, tween(220))
+                                    knob = fraction.value
+                                }
                             }
                         },
                         onDragCancel = {
                             dragging = false
-                            fraction.animateTo(if (active) 1f else 0f, tween(220))
+                            scope.launch {
+                                fraction.animateTo(if (active) 1f else 0f, tween(220))
+                                knob = fraction.value
+                            }
                         },
                         onHorizontalDrag = { _, dragAmount ->
                             val delta = dragAmount / trackPx
                             val next = if (active) fraction.value - delta else fraction.value + delta
-                            fraction.snapTo(next.coerceIn(0f, 1f))
+                            val c = next.coerceIn(0f, 1f)
+                            knob = c
+                            scope.launch { fraction.snapTo(c) }
                         }
                     )
                 },
@@ -311,13 +327,13 @@ private fun SlideToLaunch(
 
         Box(
             modifier = Modifier
-                .offset(x = trackDp * frac)
+                .offset(x = trackDp * knob)
                 .size(knobSize)
                 .clip(RoundedCornerShape(18.dp))
                 .background(
                     if (active)
                         Brush.linearGradient(listOf(BrandGreen, Color(0xFF0EB070)))
-                    else Color(0xFF101317)
+                    else SolidColor(Color(0xFF101317))
                 )
                 .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(18.dp)),
             contentAlignment = Alignment.Center
