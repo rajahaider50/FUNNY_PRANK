@@ -27,9 +27,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Headphones
-import androidx.compose.material.icons.rounded.LightningBolt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -86,7 +87,7 @@ private val introPages = listOf(
     IntroPage(
         image = R.drawable.intro1,
         eyebrow = "WELCOME",
-        eyebrowIcon = Icons.Rounded.LightningBolt,
+        eyebrowIcon = Icons.Rounded.Bolt,
         prefix = "Your ",
         accentWord = "Funny",
         accentColor = BrandRed,
@@ -355,7 +356,7 @@ private fun PageDot(active: Boolean, onClick: () -> Unit) {
                 if (active) {
                     Brush.linearGradient(listOf(BrandRed, BrandGreen))
                 } else {
-                    Color(0xFF333A41)
+                    SolidColor(Color(0xFF333A41))
                 }
             )
             .clickable { onClick() }
